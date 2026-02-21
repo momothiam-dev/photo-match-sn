@@ -1,0 +1,7 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="40" rx="8" fill="#1a2c4a"/>
+  <circle cx="13" cy="15" r="5" fill="#ffa500"/>
+  <circle cx="27" cy="15" r="5" fill="#ffa500"/>
+  <path d="M10 28C10 25 12 23 15 23H25C28 23 30 25 30 28V30C30 32 28 34 25 34H15C12 34 10 32 10 30V28Z" fill="#0066cc"/>
+  <text x="20" y="22" font-size="14" font-weight="bold" fill="white" text-anchor="middle">📷</text>
+</svg>
