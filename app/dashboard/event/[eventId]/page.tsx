@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getEvent } from '@/lib/firestore'
 import type { Event } from '@/lib/types'
 import dynamic from 'next/dynamic'
+import { BackButton } from '@/components/BackButton'
 
 const UploadZone        = dynamic(() => import('@/components/photographer/UploadZone'), { ssr: false })
 const QRCodeGenerator   = dynamic(() => import('@/components/photographer/QRCodeGenerator'), { ssr: false })
@@ -27,42 +28,47 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[calc(100vh-73px)] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">Événement introuvable.</p>
-        <Link href="/admin" className="btn-secondary">← Retour au dashboard</Link>
+      <div className="min-h-[calc(100vh-73px)] flex flex-col items-center justify-center gap-6">
+        <div className="text-6xl">😕</div>
+        <p className="text-gray-500 text-xl font-medium">Événement introuvable.</p>
+        <BackButton fallback="/admin" label="Retour au dashboard" className="btn-secondary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-brand-navy text-white px-6 py-4 flex items-center gap-4">
-        <Link href="/admin" className="text-white/60 hover:text-white transition-colors">← Retour</Link>
-        <div className="flex-1">
-          <h1 className="font-display font-bold text-lg">{event.name}</h1>
-          <p className="text-white/60 text-xs">
-            {new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            {event.location && ` · ${event.location}`}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="font-bold">{event.totalPhotos}</p>
-          <p className="text-white/50 text-xs">photos</p>
+    <div className="min-h-[calc(100vh-73px)]">
+      <header className="bg-brand-navy-light dark:bg-brand-navy-light/50 text-white px-6 py-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        
+        <div className="max-w-4xl mx-auto relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+          <div>
+            <BackButton fallback="/admin" className="text-white/60 hover:text-white mb-6" />
+            <h1 className="text-4xl font-display font-bold mb-2">{event.name}</h1>
+            <div className="flex items-center gap-4 text-white/60 text-lg">
+              <span>{new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              <span>•</span>
+              <span>{event.location || 'Sénégal'}</span>
+            </div>
+          </div>
+          <div className="text-left md:text-right">
+            <p className="text-4xl font-bold text-brand-gold">{event.totalPhotos || 0}</p>
+            <p className="text-white/50 text-xs uppercase font-bold tracking-widest">Photos Indexées</p>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
-
+      <main className="max-w-4xl mx-auto px-4 py-12">
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6">
+        <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl mb-10">
           {([
             { key: 'upload', label: '⬆️ Upload photos' },
             { key: 'qr',     label: '📱 QR Code' },
@@ -71,67 +77,71 @@ export default function EventDetailPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                ${tab === t.key ? 'bg-white text-brand-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`flex-1 py-3.5 rounded-xl text-sm font-bold transition-all duration-300
+                ${tab === t.key 
+                  ? 'bg-white dark:bg-brand-navy text-brand-blue shadow-premium' 
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* Tab : Upload */}
-        {tab === 'upload' && (
-          <div className="card">
-            <h2 className="font-display text-lg font-semibold text-brand-navy mb-1">Upload des photos</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              Les photos seront uploadées sur Cloudinary et indexées automatiquement par l&apos;IA.
-            </p>
-            <UploadZone
-              eventId={eventId}
-              photographerName={event.photographerName}
-              onComplete={(total) => {
-                setEvent(prev => prev ? { ...prev, totalPhotos: prev.totalPhotos + total } : prev)
-              }}
-            />
-          </div>
-        )}
+        {/* Tab content */}
+        <div className="card">
+          {tab === 'upload' && (
+            <div>
+              <h2 className="text-2xl font-display text-brand-navy dark:text-white mb-2">Upload des photos</h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-8">
+                Vos clichés seront optimisés pour le web, marqués avec votre filigrane et indexés pour la recherche faciale.
+              </p>
+              <UploadZone
+                eventId={eventId}
+                photographerName={event.photographerName}
+                onComplete={(total) => {
+                  setEvent(prev => prev ? { ...prev, totalPhotos: (prev.totalPhotos || 0) + total } : prev)
+                }}
+              />
+            </div>
+          )}
 
-        {/* Tab : QR Code */}
-        {tab === 'qr' && (
-          <div className="card">
-            <h2 className="font-display text-lg font-semibold text-brand-navy mb-1">QR Code de l&apos;événement</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              Imprimez ce QR Code ou partagez-le. Les invités accèdent à la galerie en le scannant.
-            </p>
-            <QRCodeGenerator eventId={eventId} eventName={event.name} />
-          </div>
-        )}
+          {tab === 'qr' && (
+            <div className="text-center">
+              <h2 className="text-2xl font-display text-brand-navy dark:text-white mb-2">Partager l&apos;événement</h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-sm mx-auto">
+                Partagez ce QR Code avec vos invités pour qu&apos;ils accèdent directement à leur galerie.
+              </p>
+              <div className="bg-gray-50 dark:bg-brand-navy p-8 rounded-3xl inline-block border border-gray-100 dark:border-gray-800 shadow-inner">
+                <QRCodeGenerator eventId={eventId} eventName={event.name} />
+              </div>
+            </div>
+          )}
 
-        {/* Tab : Galerie */}
-        {tab === 'photos' && (
-          <div className="card">
-            <h2 className="font-display text-lg font-semibold text-brand-navy mb-1">Photos de l&apos;événement</h2>
-            <p className="text-gray-400 text-sm mb-6">{event.totalPhotos} photo{event.totalPhotos > 1 ? 's' : ''} indexée{event.totalPhotos > 1 ? 's' : ''}</p>
-            {event.totalPhotos === 0
-              ? (
-                <div className="text-center py-10 text-gray-400">
-                  <div className="text-4xl mb-3">🖼️</div>
-                  <p className="text-sm">Aucune photo uploadée pour le moment.</p>
+          {tab === 'photos' && (
+            <div>
+              <h2 className="text-2xl font-display text-brand-navy dark:text-white mb-2">Gestion des photos</h2>
+              <p className="text-gray-500 dark:text-gray-400 mb-8">
+                {event.totalPhotos} photo{event.totalPhotos > 1 ? 's' : ''} indexée{event.totalPhotos > 1 ? 's' : ''} dans cette galerie.
+              </p>
+              
+              {event.totalPhotos === 0 ? (
+                <div className="text-center py-20 bg-gray-50 dark:bg-brand-navy rounded-3xl border border-dashed border-gray-200 dark:border-gray-800">
+                  <div className="text-5xl mb-4">🖼️</div>
+                  <p className="text-gray-500">Commencez par uploader quelques clichés.</p>
                 </div>
-              )
-              : (
-                <div className="space-y-4">
-                  <Link href={`/gallery/${eventId}`} className="btn-primary inline-block">
-                    📷 Voir la galerie
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href={`/gallery?eventId=${eventId}`} className="btn-primary flex-1 flex items-center justify-center gap-3 py-4">
+                    <span>📷</span> Voir la galerie publique
                   </Link>
-                  <Link href={`/search-face/${eventId}`} className="btn-secondary inline-block ml-3">
-                    🔍 Rechercher par visage
+                  <Link href={`/search-face/${eventId}`} className="btn-secondary flex-1 flex items-center justify-center gap-3 py-4">
+                    <span>🔍</span> Tester la recherche faciale
                   </Link>
                 </div>
-              )
-            }
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )

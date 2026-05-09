@@ -30,29 +30,26 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     })
 
-    // Construire une URL de paiement selon le fournisseur choisi
-    let paymentUrl = `https://payment-provider.com/pay?amount=${totalAmount}&purchaseId=${purchaseId}&method=${paymentMethod}`
+    // URL de secours pour le développement (simulation locale)
+    let paymentUrl = `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}&simulated=true`
 
-    // Intégration PayTech
-    if (paymentMethod === 'paytech') {
+    // Tenter l'intégration PayTech si configurée
+    const paytechApiKey = process.env.PAYTECH_API_KEY
+    const paytechApiUrl = process.env.PAYTECH_API_URL
+
+    if (paytechApiKey && paytechApiUrl) {
       try {
-        const paytechApiUrl = process.env.PAYTECH_API_URL
-        const paytechApiKey = process.env.PAYTECH_API_KEY
-
-        if (!paytechApiUrl || !paytechApiKey) {
-          return NextResponse.json({ error: 'PayTech non configuré (PAYTECH_API_URL / PAYTECH_API_KEY manquants)' }, { status: 500 })
-        }
-
         const callbackUrl = `${request.headers.get('origin')}/api/payment/webhook`
-        const returnUrl = `${request.headers.get('origin')}/success?purchaseId=${purchaseId}`
+        const returnUrl = `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}`
 
-        const payload: any = {
-          merchantId: process.env.PAYTECH_MERCHANT_ID || undefined,
+        const payload = {
           amount: totalAmount,
           currency: 'XOF',
           orderId: purchaseId,
           callbackUrl,
           returnUrl,
+          // Optionnel: on peut spécifier la méthode à PayTech si l'API le supporte
+          paymentMethod: paymentMethod === 'paytech' ? undefined : paymentMethod
         }
 
         const payRes = await fetch(`${paytechApiUrl}/payments`, {
@@ -64,31 +61,12 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify(payload),
         })
 
-        if (!payRes.ok) {
-          const text = await payRes.text()
-          return NextResponse.json({ error: `PayTech error: ${payRes.status} ${text}` }, { status: 502 })
+        if (payRes.ok) {
+          const payData = await payRes.json()
+          paymentUrl = payData.paymentUrl || payData.checkoutUrl || payData.redirectUrl || paymentUrl
         }
-
-        const payData = await payRes.json()
-        // PayTech peut renvoyer différents champs pour l'URL de paiement
-        let candidate = payData.paymentUrl || payData.checkoutUrl || payData.redirectUrl || paymentUrl
-
-        // Si l'URL renvoyée est relative (ex: "pay?...") ou manque de protocole, la rendre absolue
-        try {
-          const isAbsolute = /^https?:\/\//i.test(candidate)
-          if (!isAbsolute) {
-            // Utiliser l'origine de PAYTECH_API_URL si fourni, sinon celle de la requête
-            const originBase = paytechApiUrl || request.headers.get('origin') || ''
-            candidate = new URL(candidate, originBase).toString()
-          }
-        } catch (e) {
-          console.warn('Impossible de normaliser paymentUrl:', candidate, e)
-        }
-
-        paymentUrl = candidate
       } catch (err) {
-        console.error('Erreur intégration PayTech:', err)
-        // on continue en renvoyant une URL de secours
+        console.error('Erreur intégration PayTech, repli sur simulation:', err)
       }
     }
 

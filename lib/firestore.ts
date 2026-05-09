@@ -6,6 +6,24 @@ import { db } from './firebase'
 import { getThumbnailUrl } from './cloudinary'
 import type { Event, Photo, Purchase } from './types'
 
+// ─── PHOTOGRAPHES ─────────────────────────────────────────
+
+export async function getPhotographerByEmail(email: string) {
+  const q = query(collection(db, 'photographers'), where('email', '==', email))
+  const snap = await getDocs(q)
+  if (snap.empty) return null
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as any
+}
+
+export async function createPhotographer(data: any) {
+  const ref = doc(collection(db, 'photographers'))
+  await setDoc(ref, {
+    ...data,
+    createdAt: data.createdAt ? data.createdAt.toISOString() : new Date().toISOString()
+  })
+  return { id: ref.id, ...data }
+}
+
 // ─── ÉVÉNEMENTS ───────────────────────────────────────────
 
 export async function createEvent(event: Omit<Event, 'id' | 'createdAt'>): Promise<string> {
@@ -31,6 +49,10 @@ export async function listEvents(): Promise<Event[]> {
 
 export async function updateEvent(eventId: string, data: Partial<Event>): Promise<void> {
   await updateDoc(doc(db, 'events', eventId), data)
+}
+
+export async function deleteEvent(eventId: string): Promise<void> {
+  await deleteDoc(doc(db, 'events', eventId))
 }
 
 // ─── PHOTOS ───────────────────────────────────────────────
@@ -132,4 +154,10 @@ export async function getPurchase(purchaseId: string): Promise<Purchase | null> 
   const snap = await getDoc(doc(db, 'purchases', purchaseId))
   if (!snap.exists()) return null
   return { id: snap.id, ...snap.data() } as Purchase
+}
+
+export async function getPurchasesForEvent(eventId: string): Promise<Purchase[]> {
+  const q = query(collection(db, 'purchases'), where('eventId', '==', eventId))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Purchase))
 }
