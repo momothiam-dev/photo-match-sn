@@ -19,3 +19,14 @@ yarn-error.log*
 # Misc
 .DS_Store
 .vscode/
+
+# ==============================
+# Fichiers générés / caches
+# ==============================
+.next/
+.next/cache/
+node_modules/
+dist/
+out/
+*.log
+*.gz               # les .pack.gz sont du cache webpack
