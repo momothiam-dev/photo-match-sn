@@ -107,39 +107,20 @@ export default function PhotoPage() {
 
             <div className="flex items-center justify-between">
               <div>
-                {isFree ? (
-                  <p className="text-green-600 font-semibold">Gratuit</p>
-                ) : (
-                  <p className="text-2xl font-bold text-brand-navy">
-                    {event.pricePerPhoto.toLocaleString()} FCFA
-                  </p>
-                )}
+                <p className="text-2xl font-bold text-brand-navy">
+                  {event.pricePerPhoto.toLocaleString()} FCFA
+                </p>
               </div>
 
-              {isFree ? (
-                <button
-                  onClick={() => {
-                    // Télécharger la photo HD (simulé pour l'instant)
-                    const link = document.createElement('a')
-                    link.href = photo.thumbnailUrl // En vrai, ce serait l'URL HD
-                    link.download = photo.filename
-                    link.click()
-                  }}
-                  className="btn-primary"
-                >
-                  📥 Télécharger
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    // Rediriger vers le checkout
-                    router.push(`/checkout?photoId=${photoId}`)
-                  }}
-                  className="btn-primary"
-                >
-                  🛒 Acheter cette photo
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  // Rediriger vers le checkout
+                  router.push(`/checkout?photoId=${photoId}`)
+                }}
+                className="btn-primary"
+              >
+                🛒 Acheter cette photo
+              </button>
             </div>
           </div>
         </div>

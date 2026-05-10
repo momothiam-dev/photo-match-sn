@@ -110,40 +110,21 @@ export default function PhotoPage() {
               </div>
 
               <div className="text-left md:text-right">
-                {isFree ? (
-                  <div className="badge badge-success text-lg py-2 px-4 mb-2 italic">Gratuit</div>
-                ) : (
-                  <div className="text-3xl font-bold text-brand-navy dark:text-white mb-2">
-                    {event.pricePerPhoto.toLocaleString()} <span className="text-sm font-normal">FCFA</span>
-                  </div>
-                )}
+                <div className="text-3xl font-bold text-brand-navy dark:text-white mb-2">
+                  {event.pricePerPhoto.toLocaleString()} <span className="text-sm font-normal">FCFA</span>
+                </div>
                 <p className="text-xs text-gray-400">Paiement sécurisé par Wave / OM</p>
               </div>
             </div>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
-              {isFree ? (
-                <button
-                  onClick={() => {
-                    const link = document.createElement('a')
-                    link.href = photo.thumbnailUrl
-                    link.download = photo.filename
-                    link.click()
-                  }}
-                  className="btn-primary flex-1 py-4 text-lg flex items-center justify-center gap-3"
-                >
-                  <span className="text-2xl">📥</span>
-                  Télécharger gratuitement
-                </button>
-              ) : (
-                <button
-                  onClick={() => router.push(`/user/checkout?photoId=${photoId}`)}
-                  className="btn-primary flex-1 py-4 text-lg flex items-center justify-center gap-3"
-                >
-                  <span className="text-2xl">🛒</span>
-                  Acheter en Haute Définition
-                </button>
-              )}
+              <button
+                onClick={() => router.push(`/user/checkout?photoId=${photoId}`)}
+                className="btn-primary flex-1 py-4 text-lg flex items-center justify-center gap-3"
+              >
+                <span className="text-2xl">🛒</span>
+                Acheter en Haute Définition
+              </button>
               <button 
                 onClick={() => router.back()}
                 className="btn-secondary px-8 py-4 text-lg"
