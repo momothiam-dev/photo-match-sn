@@ -60,18 +60,20 @@ export default function SearchFacePage() {
     setTimeout(async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
           audio: false
         })
         
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           streamRef.current = stream
-          // Forcer la lecture pour certains navigateurs mobiles
-          try {
-            await videoRef.current.play()
-          } catch (playErr) {
-            console.error('Erreur lecture vidéo:', playErr)
+          // Assurer le rendu immédiat
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(e => console.error("Play failed:", e))
           }
         } else {
           throw new Error("L'élément vidéo n'est pas prêt")
@@ -90,7 +92,7 @@ export default function SearchFacePage() {
       streamRef.current = null
     }
     setWebcamActive(false)
-    setCapturedImage(null)
+    // Ne pas mettre capturedImage à null ici !
   }
 
   const captureFromWebcam = async () => {
