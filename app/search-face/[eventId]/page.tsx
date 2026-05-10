@@ -53,21 +53,35 @@ export default function SearchFacePage() {
   }, [eventId])
 
   const startWebcam = async () => {
-    try {
-      setError('')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false
-      })
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        streamRef.current = stream
-        setWebcamActive(true)
+    setError('')
+    setWebcamActive(true)
+    
+    // On attend un petit peu que le DOM se mette à jour pour que videoRef.current soit disponible
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: false
+        })
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          streamRef.current = stream
+          // Forcer la lecture pour certains navigateurs mobiles
+          try {
+            await videoRef.current.play()
+          } catch (playErr) {
+            console.error('Erreur lecture vidéo:', playErr)
+          }
+        } else {
+          throw new Error("L'élément vidéo n'est pas prêt")
+        }
+      } catch (err: any) {
+        console.error('Erreur webcam:', err)
+        setWebcamActive(false)
+        setError(`❌ Impossible d'accéder à la caméra : ${err.message || "Veuillez vérifier les permissions."}`)
       }
-    } catch (err: any) {
-      console.error('Erreur webcam:', err)
-      setError(`❌ Impossible d'accéder à la webcam: ${err.message}`)
-    }
+    }, 300)
   }
 
   const stopWebcam = () => {
