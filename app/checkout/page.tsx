@@ -9,41 +9,54 @@ import type { Photo, Event, Purchase } from '@/lib/types'
 function CheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const photoId = searchParams.get('photoId')
+  const singlePhotoId = searchParams.get('photoId')
+  const multiplePhotoIds = searchParams.get('photoIds')
+  const idsToFetch = multiplePhotoIds ? multiplePhotoIds.split(',') : (singlePhotoId ? [singlePhotoId] : [])
 
-  const [photo, setPhoto] = useState<Photo | null>(null)
+  const [photos, setPhotos] = useState<Photo[]>([])
   const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'wave' | 'orange_money' | 'paytech'>('wave')
 
-  useEffect(() => {
     async function loadData() {
-      if (!photoId) {
+      if (idsToFetch.length === 0) {
         setError('Aucune photo sélectionnée')
         setLoading(false)
         return
       }
 
       try {
-        // Charger d'abord la photo
-        const photoData = await getPhoto(photoId)
-        if (!photoData) {
-          setError('Photo introuvable')
+        const fetchedPhotos: Photo[] = []
+        let currentEvent: Event | null = null
+
+        for (const id of idsToFetch) {
+          const photoData = await getPhoto(id)
+          if (photoData) {
+            fetchedPhotos.push(photoData)
+          }
+        }
+
+        if (fetchedPhotos.length === 0) {
+          setError('Photos introuvables')
           return
         }
-        setPhoto(photoData)
 
-        // Puis charger l'event pour avoir le photographerName
-        const eventData = await getEvent(photoData.eventId)
-        setEvent(eventData)
+        currentEvent = await getEvent(fetchedPhotos[0].eventId)
+        setEvent(currentEvent)
         
-        // Régénérer la thumbnailUrl avec le bon photographerName
-        if (eventData && photoData.cloudinaryPublicId) {
+        if (currentEvent) {
           const { getThumbnailUrl } = await import('@/lib/cloudinary')
-          photoData.thumbnailUrl = getThumbnailUrl(photoData.cloudinaryPublicId, eventData.photographerName)
-          setPhoto({ ...photoData })
+          const updatedPhotos = fetchedPhotos.map(p => {
+            if (p.cloudinaryPublicId) {
+              return { ...p, thumbnailUrl: getThumbnailUrl(p.cloudinaryPublicId, currentEvent!.photographerName) }
+            }
+            return p
+          })
+          setPhotos(updatedPhotos)
+        } else {
+          setPhotos(fetchedPhotos)
         }
       } catch (err) {
         console.error('Erreur chargement:', err)
@@ -54,10 +67,10 @@ function CheckoutContent() {
     }
 
     loadData()
-  }, [photoId])
+  }, [searchParams])
 
   const handlePurchase = async () => {
-    if (!photo || !event) return
+    if (photos.length === 0 || !event) return
 
     setProcessing(true)
     setError('')
@@ -68,7 +81,7 @@ function CheckoutContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          photoIds: [photo.id],
+          photoIds: photos.map(p => p.id),
           eventId: event.id,
           paymentMethod,
         }),
@@ -106,7 +119,7 @@ function CheckoutContent() {
     )
   }
 
-  if (error || !photo || !event) {
+  if (error || photos.length === 0 || !event) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
         <p className="text-gray-500">{error || 'Erreur de chargement.'}</p>
@@ -115,11 +128,13 @@ function CheckoutContent() {
     )
   }
 
+  const totalAmount = event.pricePerPhoto * photos.length
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-brand-navy text-white px-6 py-4">
         <div className="max-w-4xl mx-auto">
-          <Link href={`/photo/${photo.id}`} className="text-white/60 hover:text-white transition-colors mb-2 block">← Retour à la photo</Link>
+          <button onClick={() => router.back()} className="text-white/60 hover:text-white transition-colors mb-2 block">← Retour</button>
           <h1 className="font-display font-bold text-xl">🛒 Checkout</h1>
           <p className="text-white/60 text-sm">{event.name}</p>
         </div>
@@ -132,13 +147,20 @@ function CheckoutContent() {
             <h2 className="font-display text-lg font-semibold text-brand-navy mb-4">Résumé de la commande</h2>
 
             <div className="flex gap-4 mb-4">
-              <img
-                src={photo.thumbnailUrl}
-                alt={photo.filename}
-                className="w-20 h-20 object-cover rounded-lg"
-              />
+              <div className="relative w-20 h-20">
+                <img
+                  src={photos[0].thumbnailUrl}
+                  alt={photos[0].filename}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+                {photos.length > 1 && (
+                  <div className="absolute -bottom-2 -right-2 bg-brand-blue text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 border-white">
+                    +{photos.length - 1}
+                  </div>
+                )}
+              </div>
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{photo.filename}</p>
+                <p className="font-medium text-gray-900">{photos.length} photo{photos.length > 1 ? 's' : ''}</p>
                 <p className="text-sm text-gray-500">{event.name}</p>
               </div>
             </div>
@@ -146,11 +168,11 @@ function CheckoutContent() {
             <div className="border-t pt-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Sous-total</span>
-                <span className="font-semibold">{event.pricePerPhoto.toLocaleString()} FCFA</span>
+                <span className="font-semibold">{totalAmount.toLocaleString()} FCFA</span>
               </div>
               <div className="flex justify-between items-center text-lg font-bold text-brand-navy mt-2">
                 <span>Total</span>
-                <span>{event.pricePerPhoto.toLocaleString()} FCFA</span>
+                <span>{totalAmount.toLocaleString()} FCFA</span>
               </div>
             </div>
           </div>
@@ -232,7 +254,7 @@ function CheckoutContent() {
                   Traitement...
                 </span>
               ) : (
-                `Payer ${event.pricePerPhoto.toLocaleString()} FCFA`
+                `Payer ${totalAmount.toLocaleString()} FCFA`
               )}
             </button>
           </div>

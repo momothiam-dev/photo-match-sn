@@ -454,14 +454,24 @@ export default function SearchFacePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={handleDownloadZip}
-                disabled={isDownloading}
-                className="btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold"
-              >
-                {isDownloading ? <Loader2 className="animate-spin" size={24} /> : <Download size={24} />}
-                <span>Télécharger ZIP</span>
-              </button>
+              {event?.pricePerPhoto === 0 ? (
+                <button 
+                  onClick={handleDownloadZip}
+                  disabled={isDownloading}
+                  className="btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold"
+                >
+                  {isDownloading ? <Loader2 className="animate-spin" size={24} /> : <Download size={24} />}
+                  <span>Télécharger ZIP</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => router.push(`/checkout?photoIds=${selectedIds.join(',')}`)}
+                  className="btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold"
+                >
+                  <ShoppingCart size={24} />
+                  <span>Acheter ({(event?.pricePerPhoto || 0) * selectedIds.length} FCFA)</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
