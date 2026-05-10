@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
         const response = await fetch(photo.url)
         if (!response.ok) throw new Error(`Échec download: ${photo.url}`)
 
-        // @ts-ignore
-        const buffer = await response.buffer()
-        zip.addFile(`${photo.filename || `photo-${photo.id}.jpg`}`, buffer)
+        const arrayBuffer = await response.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
+        zip.addFile(`${photo.filename || `photo-${i}.jpg`}`, buffer)
       } catch (err) {
-        console.warn(`Erreur téléchargement photo ${i}:`, err)
+        console.error(`Erreur téléchargement photo ${i}:`, err)
       }
     }
 

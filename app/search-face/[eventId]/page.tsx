@@ -185,11 +185,21 @@ export default function SearchFacePage() {
     if (selectedIds.length === 0) return
     setIsDownloading(true)
     try {
+      // Récupérer les objets photos complets pour les IDs sélectionnés
+      const selectedPhotos = results
+        .filter(p => selectedIds.includes(p.id))
+        .map(p => ({
+          url: event?.pricePerPhoto === 0 
+            ? `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${p.cloudinaryPublicId}`
+            : p.thumbnailUrl,
+          filename: `photo-${p.id}.jpg`
+        }))
+
       const response = await fetch('/api/download-zip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          photoIds: selectedIds,
+          photoUrls: selectedPhotos,
           eventName: event?.name || 'Photos'
         }),
       })
