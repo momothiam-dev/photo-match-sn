@@ -20,6 +20,7 @@ function CheckoutContent() {
   const [error, setError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'wave' | 'orange_money' | 'paytech'>('wave')
 
+  useEffect(() => {
     async function loadData() {
       if (idsToFetch.length === 0) {
         setError('Aucune photo sélectionnée')
