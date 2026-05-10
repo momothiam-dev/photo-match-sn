@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getEvent, getEventPhotos, getPurchasesForEvent } from '@/lib/firestore'
 
 export const dynamic = 'force-dynamic'
+// Force redeploy
 
 export async function GET(request: NextRequest) {
   try {
