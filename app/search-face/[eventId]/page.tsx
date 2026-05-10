@@ -401,7 +401,25 @@ export default function SearchFacePage() {
                         </div>
                       </div>
 
-                      {/* Selection indicator */}
+                      {/* Individual Buy Button */}
+                      <div className="p-4 bg-white dark:bg-brand-navy-light border-t border-gray-100 dark:border-white/5">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Photo HD</span>
+                          <span className="text-sm font-black text-brand-blue">{event?.pricePerPhoto || 0} FCFA</span>
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/checkout?photoId=${photo.id}`);
+                          }}
+                          className="w-full py-2.5 bg-brand-blue hover:bg-brand-navy text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
+                        >
+                          <ShoppingCart size={14} />
+                          Acheter cette photo
+                        </button>
+                      </div>
+
+                      {/* Selection indicator (overlay) */}
                       <div className={`absolute top-4 right-4 transition-all duration-300 ${
                         isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100'
                       }`}>
@@ -411,14 +429,6 @@ export default function SearchFacePage() {
                           <CheckCircle2 size={16} />
                         </div>
                       </div>
-
-                      {isSelected && (
-                        <div className="absolute inset-0 bg-brand-blue/10 flex items-center justify-center">
-                          <div className="bg-white rounded-full p-3 text-brand-blue shadow-2xl">
-                            <CheckCircle2 size={40} />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -454,7 +464,7 @@ export default function SearchFacePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {event?.pricePerPhoto === 0 ? (
+              {(event?.pricePerPhoto || 0) === 0 ? (
                 <button 
                   onClick={handleDownloadZip}
                   disabled={isDownloading || selectedIds.length === 0}
@@ -470,7 +480,7 @@ export default function SearchFacePage() {
                   className={`btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold ${selectedIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <ShoppingCart size={24} />
-                  <span>Acheter ({(event?.pricePerPhoto || 0) * selectedIds.length} FCFA)</span>
+                  <span>Tout acheter ({(event?.pricePerPhoto || 0) * selectedIds.length} FCFA)</span>
                 </button>
               )}
             </div>
