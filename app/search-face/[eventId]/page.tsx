@@ -441,7 +441,7 @@ export default function SearchFacePage() {
       </main>
 
       {/* Floating Action Bar */}
-      {selectedIds.length > 0 && (
+      {results.length > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-2xl animate-slide-up">
           <div className="bg-brand-navy/90 backdrop-blur-xl border border-white/10 p-4 md:p-6 rounded-[2.5rem] shadow-2xl shadow-black/50 flex items-center justify-between gap-6">
             <div className="flex items-center gap-4 px-2">
@@ -457,8 +457,8 @@ export default function SearchFacePage() {
               {event?.pricePerPhoto === 0 ? (
                 <button 
                   onClick={handleDownloadZip}
-                  disabled={isDownloading}
-                  className="btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold"
+                  disabled={isDownloading || selectedIds.length === 0}
+                  className={`btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold ${selectedIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isDownloading ? <Loader2 className="animate-spin" size={24} /> : <Download size={24} />}
                   <span>Télécharger ZIP</span>
@@ -466,7 +466,8 @@ export default function SearchFacePage() {
               ) : (
                 <button 
                   onClick={() => router.push(`/checkout?photoIds=${selectedIds.join(',')}`)}
-                  className="btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold"
+                  disabled={selectedIds.length === 0}
+                  className={`btn-primary !py-4 px-8 flex items-center gap-3 text-lg font-bold ${selectedIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <ShoppingCart size={24} />
                   <span>Acheter ({(event?.pricePerPhoto || 0) * selectedIds.length} FCFA)</span>

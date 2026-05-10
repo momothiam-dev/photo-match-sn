@@ -117,6 +117,45 @@ function SuccessContent() {
 
           {purchase.originalUrls && purchase.originalUrls.length > 0 ? (
             <div className="space-y-3">
+              {purchase.originalUrls.length > 1 && (
+                <button
+                  onClick={async () => {
+                    try {
+                      setDownloading('zip')
+                      const selectedPhotos = purchase.originalUrls!.map((url, idx) => ({
+                        url,
+                        filename: `photo-${purchase.id}-${idx + 1}.jpg`
+                      }))
+                      const response = await fetch('/api/download-zip', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                          photoUrls: selectedPhotos,
+                          eventName: 'Mes-Photos-Achetees'
+                        }),
+                      })
+                      if (!response.ok) throw new Error('Erreur')
+                      const blob = await response.blob()
+                      const urlBlob = window.URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = urlBlob
+                      a.download = `Photos-${purchase.id}.zip`
+                      document.body.appendChild(a)
+                      a.click()
+                      a.remove()
+                    } catch (err) {
+                      alert('Erreur lors de la création du ZIP')
+                    } finally {
+                      setDownloading(null)
+                    }
+                  }}
+                  disabled={downloading !== null}
+                  className="btn-primary block text-center w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                >
+                  {downloading === 'zip' ? 'Préparation du ZIP...' : '📦 Tout télécharger en ZIP'}
+                </button>
+              )}
+
               <div className="grid grid-cols-1 gap-2">
                 {purchase.originalUrls.map((url, idx) => {
                   const filename = `photo-${purchase.id}-${idx + 1}.jpg`
@@ -125,12 +164,12 @@ function SuccessContent() {
                     <button
                       key={idx}
                       onClick={() => handleDownload(url, filename)}
-                      disabled={downloading === filename}
-                      className="btn-primary block text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={downloading !== null}
+                      className="btn-secondary block text-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {downloading === filename ? (
                         <span className="inline-flex items-center gap-2">
-                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span className="w-4 h-4 border-2 border-brand-blue/30 border-t-brand-blue rounded-full animate-spin" />
                           Téléchargement...
                         </span>
                       ) : (
@@ -140,7 +179,7 @@ function SuccessContent() {
                   )
                 })}
               </div>
-              <Link href="/user" className="btn-secondary block">
+              <Link href="/user" className="btn-secondary block w-full mt-4 bg-gray-100 hover:bg-gray-200">
                 Retour à l'accueil
               </Link>
             </div>

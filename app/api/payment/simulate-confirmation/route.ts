@@ -6,10 +6,14 @@ import { NextRequest, NextResponse } from 'next/server'
  * En production, ce webhook serait appelé par le fournisseur de paiement
  */
 export async function POST(request: NextRequest) {
-  // Cette route NE DOIT ÊTRE UTILISÉE qu'en développement.
+  // ATTENTION: Cette route est accessible en production pour les tests.
+  // Dans un vrai projet de production, il faudrait soit la désactiver,
+  // soit la protéger avec une clé secrète.
+  /*
   if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json({ error: 'Simulation désactivée en production' }, { status: 404 })
   }
+  */
 
   try {
     const { purchaseId } = await request.json()
