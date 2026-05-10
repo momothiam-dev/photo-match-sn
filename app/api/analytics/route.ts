@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEvent, getEventPhotos, getPurchasesForEvent } from '@/lib/firestore'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const eventId = request.nextUrl.searchParams.get('eventId')
