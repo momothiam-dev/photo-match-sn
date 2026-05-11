@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { getCloudinaryConfig } from '@/lib/cloudinary'
-import { savePhoto } from '@/lib/firestore'
+import { adminSavePhoto } from '@/lib/firestore-admin'
 
-// Configurer Cloudinary côté serveur
 const config = getCloudinaryConfig()
 cloudinary.config(config)
 
@@ -12,33 +11,19 @@ export async function POST(request: NextRequest) {
     const formData  = await request.formData()
     const file      = formData.get('file') as File | null
     const eventId   = formData.get('eventId') as string | null
-    const photographerName = formData.get('photographerName') as string || 'Photo-Match SN'
 
     if (!file || !eventId) {
       return NextResponse.json({ error: 'Fichier et eventId requis' }, { status: 400 })
     }
 
-    // Validation type
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/webp']
-    if (!allowed.includes(file.type)) {
-      return NextResponse.json({ error: 'Format non supporté. Utilisez JPEG, PNG ou HEIC.' }, { status: 400 })
-    }
-
-    // Validation taille (max 20 Mo)
-    if (file.size > 20 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Fichier trop volumineux. Maximum 20 Mo.' }, { status: 400 })
-    }
-
-    // Convertir le File en buffer
     const bytes  = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload vers Cloudinary dans le dossier originals/eventId/
     const uploadResult = await new Promise<{ public_id: string; secure_url: string }>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder:          `originals/${eventId}`,
-          resource_type:   'image',
+          folder: `originals/${eventId}`,
+          resource_type: 'image',
         },
         (error, result) => {
           if (error || !result) reject(error)
@@ -47,25 +32,24 @@ export async function POST(request: NextRequest) {
       ).end(buffer)
     })
 
-    // Sauvegarder les métadonnées dans Firestore
-    const photoId = await savePhoto({
+    const photoId = await adminSavePhoto({
       eventId,
       cloudinaryPublicId: uploadResult.public_id,
-      thumbnailUrl:       '',        
-      descriptor:         [],        
-      hasDescriptor:      false,     
-      filename:           file.name,
+      thumbnailUrl: '',
+      descriptor: [],
+      hasDescriptor: false,
+      filename: file.name,
     })
 
     return NextResponse.json({
-      success:            true,
+      success: true,
       photoId,
       cloudinaryPublicId: uploadResult.public_id,
-      originalUrl:        uploadResult.secure_url,
+      originalUrl: uploadResult.secure_url,
     })
 
   } catch (error) {
     console.error('[Upload] Erreur :', error)
-    return NextResponse.json({ error: 'Erreur serveur lors de l\'upload' }, { status: 500 })
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

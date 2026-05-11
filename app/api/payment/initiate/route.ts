@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPurchase, getEvent } from '@/lib/firestore'
+import { getEvent } from '@/lib/firestore'
+import { adminCreatePurchase } from '@/lib/firestore-admin'
 
 export async function POST(request: NextRequest) {
   try {
     const { photoIds, eventId, paymentMethod } = await request.json()
 
-    if (!photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
-      return NextResponse.json({ error: 'photoIds requis' }, { status: 400 })
-    }
-
-    if (!eventId || !paymentMethod) {
-      return NextResponse.json({ error: 'eventId et paymentMethod requis' }, { status: 400 })
+    if (!photoIds || !eventId || !paymentMethod) {
+      return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
 
     const event = await getEvent(eventId)
-    if (!event) {
-      return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
-    }
+    if (!event) return NextResponse.json({ error: 'Event introuvable' }, { status: 404 })
 
     const totalAmount = photoIds.length * event.pricePerPhoto
 
-    // Créer l'achat
-    const purchaseId = await createPurchase({
+    const purchaseId = await adminCreatePurchase({
       eventId,
       photoIds,
       totalAmount,
@@ -31,22 +25,19 @@ export async function POST(request: NextRequest) {
 
     let paymentUrl = `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}&simulated=true`
 
+    // PayTech integration
     const paytechApiKey = process.env.PAYTECH_API_KEY
     const paytechApiUrl = process.env.PAYTECH_API_URL
 
     if (paytechApiKey && paytechApiUrl) {
       try {
-        const callbackUrl = `${request.headers.get('origin')}/api/payment/webhook`
-        const returnUrl = `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}`
-
         const payload = {
           amount: totalAmount,
           currency: 'XOF',
           orderId: purchaseId,
-          callbackUrl,
-          returnUrl,
+          callbackUrl: `${request.headers.get('origin')}/api/payment/webhook`,
+          returnUrl: `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}`,
         }
-
         const payRes = await fetch(`${paytechApiUrl}/payments`, {
           method: 'POST',
           headers: {
@@ -55,18 +46,16 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify(payload),
         })
-
         if (payRes.ok) {
           const payData = await payRes.json()
-          paymentUrl = payData.paymentUrl || payData.checkoutUrl || payData.redirectUrl || paymentUrl
+          paymentUrl = payData.paymentUrl || payData.checkoutUrl || paymentUrl
         }
       } catch (err) {
-        console.error('Erreur PayTech:', err)
+        console.error('PayTech Error:', err)
       }
     }
 
     return NextResponse.json({ purchaseId, paymentUrl, totalAmount })
-
   } catch (error) {
     console.error('Erreur initiation paiement:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })

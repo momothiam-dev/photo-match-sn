@@ -1,55 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import crypto from 'crypto'
-import { updatePurchase, getPurchase, getPhoto } from '@/lib/firestore'
+import { getPurchase, getPhoto } from '@/lib/firestore'
+import { adminUpdatePurchase } from '@/lib/firestore-admin'
 import { getDownloadUrl } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
   try {
-    const raw = await request.text()
-    let body: any = {}
-    try {
-      body = JSON.parse(raw)
-    } catch (e) {}
-
+    const body = await request.json()
     const purchaseId = body.purchaseId || body.orderId || body.reference
-    let statusRaw = body.status || body.paymentStatus || body.state
+    const statusRaw = body.status || body.paymentStatus || body.state
     
-    if (!purchaseId || !statusRaw) {
-      return NextResponse.json({ error: 'purchaseId et status requis' }, { status: 400 })
-    }
+    if (!purchaseId || !statusRaw) return NextResponse.json({ error: 'Data missing' }, { status: 400 })
 
     let status = 'pending'
-    if (typeof statusRaw === 'string') {
-      const s = statusRaw.toLowerCase()
-      if (s === 'paid' || s === 'success' || s === 'confirmed' || s === 'completed') status = 'confirmed'
-      else if (s === 'failed' || s === 'cancelled' || s === 'declined' || s === 'error') status = 'failed'
-    }
+    const s = String(statusRaw).toLowerCase()
+    if (['paid', 'success', 'confirmed', 'completed'].includes(s)) status = 'confirmed'
+    else if (['failed', 'cancelled', 'declined', 'error'].includes(s)) status = 'failed'
 
     const purchase = await getPurchase(purchaseId)
-    if (!purchase) {
-      return NextResponse.json({ error: 'Achat introuvable' }, { status: 404 })
-    }
+    if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const updateData: any = { status }
 
     if (status === 'confirmed') {
       const photos = await Promise.all(
         purchase.photoIds.map(async (photoId) => {
-          const photo = await getPhoto(photoId, 'Photo-Match SN')
-          if (photo && photo.cloudinaryPublicId) {
-            return getDownloadUrl(photo.cloudinaryPublicId)
-          }
-          return null
+          const photo = await getPhoto(photoId)
+          return photo?.cloudinaryPublicId ? getDownloadUrl(photo.cloudinaryPublicId) : null
         })
       )
-      updateData.originalUrls = photos.filter((url) => url !== null) as string[]
+      updateData.originalUrls = photos.filter(url => url !== null) as string[]
     }
 
-    await updatePurchase(purchaseId, updateData)
+    await adminUpdatePurchase(purchaseId, updateData)
     return NextResponse.json({ success: true })
-
   } catch (error) {
-    console.error('Erreur webhook paiement:', error)
+    console.error('Webhook Error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
