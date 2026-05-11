@@ -135,6 +135,10 @@ export async function getPhoto(photoId: string, photographerName: string = 'Phot
   } as Photo
 }
 
+export async function deletePhoto(photoId: string): Promise<void> {
+  await deleteDoc(doc(db, 'photos', photoId))
+}
+
 // ─── ACHATS ───────────────────────────────────────────────
 
 export async function createPurchase(purchase: Omit<Purchase, 'id' | 'createdAt'>): Promise<string> {

@@ -42,6 +42,44 @@ export default function UploadZone({ eventId, photographerName, onComplete }: Pr
     disabled: isRunning,
   })
 
+  const resizeImage = (file: File, maxWidth = 2000, maxHeight = 2000): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (e) => {
+        const img = new Image()
+        img.src = e.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width
+              width = maxWidth
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height
+              height = maxHeight
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob)
+            else reject(new Error('Canvas toBlob failed'))
+          }, 'image/jpeg', 0.85) // 85% quality is a good compromise
+        }
+      }
+      reader.onerror = reject
+    })
+  }
+
   const processAll = async () => {
     if (isRunning) return
     setIsRunning(true)
@@ -63,15 +101,23 @@ export default function UploadZone({ eventId, photographerName, onComplete }: Pr
 
     for (const fileProgress of pending) {
       try {
-        // Upload la photo
+        // Redimensionner avant upload pour économiser Cloudinary (Budget 0)
         setFiles(prev => prev.map(f =>
           f.filename === fileProgress.filename
-            ? { ...f, status: 'uploading', progress: 20 }
+            ? { ...f, status: 'uploading', progress: 10 }
+            : f
+        ))
+
+        const resizedBlob = await resizeImage(fileProgress.file)
+        
+        setFiles(prev => prev.map(f =>
+          f.filename === fileProgress.filename
+            ? { ...f, progress: 20 }
             : f
         ))
 
         const formData = new FormData()
-        formData.append('file', fileProgress.file)
+        formData.append('file', resizedBlob, fileProgress.filename)
         formData.append('eventId', eventId)
         formData.append('photographerName', photographerName)
 

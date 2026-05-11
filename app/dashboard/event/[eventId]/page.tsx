@@ -142,6 +142,41 @@ export default function EventDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Danger Zone */}
+        <div className="mt-12 p-8 border-2 border-red-100 rounded-3xl bg-red-50/30">
+          <h3 className="text-xl font-bold text-red-700 mb-2">Zone de Danger (Budget 0)</h3>
+          <p className="text-gray-600 text-sm mb-6">
+            Une fois l'événement terminé et les invités servis, vous pouvez supprimer les photos pour libérer votre espace Cloudinary.
+            <br/><strong>Attention : cette action est irréversible.</strong>
+          </p>
+          
+          <button
+            onClick={async () => {
+              if (confirm('Voulez-vous vraiment supprimer toutes les photos de cet événement ? Cette action libérera votre stockage Cloudinary.')) {
+                try {
+                  const res = await fetch('/api/admin/cleanup-event', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eventId }),
+                  })
+                  if (res.ok) {
+                    alert('L\'espace a été libéré avec succès !')
+                    window.location.reload()
+                  } else {
+                    alert('Erreur lors du nettoyage.')
+                  }
+                } catch (err) {
+                  console.error(err)
+                  alert('Erreur réseau.')
+                }
+              }
+            }}
+            className="px-6 py-3 bg-white border-2 border-red-200 text-red-600 rounded-xl font-bold hover:bg-red-600 hover:text-white hover:border-red-600 transition-all"
+          >
+            🧹 Libérer l'espace Cloudinary
+          </button>
+        </div>
       </main>
     </div>
   )
