@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createPurchase, getEvent } from '@/lib/firestore'
+import { getEvent } from '@/lib/firestore'
+import { adminCreatePurchase } from '@/lib/firestore-admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,8 +22,8 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = photoIds.length * event.pricePerPhoto
 
-    // Créer l'achat
-    const purchaseId = await createPurchase({
+    // Créer l'achat via Admin SDK
+    const purchaseId = await adminCreatePurchase({
       eventId,
       photoIds,
       totalAmount,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { doc, updateDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { adminUpdatePhoto } from '@/lib/firestore-admin'
 
 /**
  * Reçoit le descripteur facial extrait côté client
@@ -31,8 +30,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Sauvegarder le descripteur dans Firestore
-    await updateDoc(doc(db, 'photos', photoId), {
+    // Sauvegarder le descripteur dans Firestore via Admin SDK
+    await adminUpdatePhoto(photoId, {
       descriptor,
       hasDescriptor: true,
     })

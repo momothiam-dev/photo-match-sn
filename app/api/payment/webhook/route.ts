@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { updatePurchase, getPurchase, getPhoto } from '@/lib/firestore'
+import { getPurchase, getPhoto } from '@/lib/firestore'
+import { adminUpdatePurchase } from '@/lib/firestore-admin'
 import { getDownloadUrl } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await updatePurchase(purchaseId, updateData)
+    await adminUpdatePurchase(purchaseId, updateData)
     console.log(`✅ Purchase ${purchaseId} mis à jour: ${status}`)
 
     return NextResponse.json({ success: true })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { getCloudinaryConfig } from '@/lib/cloudinary'
-import { savePhoto } from '@/lib/firestore'
+import { adminSavePhoto } from '@/lib/firestore-admin'
 
 // Configurer Cloudinary côté serveur
 const config = getCloudinaryConfig()
@@ -49,14 +49,13 @@ export async function POST(request: NextRequest) {
       ).end(buffer)
     })
 
-    // Sauvegarder les métadonnées dans Firestore
-    // Note : le descripteur facial sera extrait côté client lors de l'indexation
-    const photoId = await savePhoto({
+    // Sauvegarder les métadonnées dans Firestore via Admin SDK
+    const photoId = await adminSavePhoto({
       eventId,
       cloudinaryPublicId: uploadResult.public_id,
-      thumbnailUrl:       '',        // Généré dynamiquement via getThumbnailUrl()
-      descriptor:         [],        // Sera rempli après indexation côté client
-      hasDescriptor:      false,     // Passera à true après indexation
+      thumbnailUrl:       '',        
+      descriptor:         [],        
+      hasDescriptor:      false,     
       filename:           file.name,
     })
 
