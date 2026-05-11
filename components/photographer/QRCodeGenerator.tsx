@@ -11,8 +11,8 @@ interface Props {
 export default function QRCodeGenerator({ eventId, eventName }: Props) {
   const [copied, setCopied] = useState(false)
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const galleryUrl = `${appUrl}/event/${eventId}`
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://photo-match-sn.vercel.app')
+  const galleryUrl = `${appUrl}/user/gallery/${eventId}`
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(galleryUrl)
