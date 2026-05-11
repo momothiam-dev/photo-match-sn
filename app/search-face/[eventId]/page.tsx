@@ -143,7 +143,7 @@ export default function SearchFacePage() {
         })
       )
       const sortedMatches = matches
-        .filter(m => m.confidence > 30)
+        .filter(m => m.confidence > 50)
         .sort((a, b) => b.confidence - a.confidence)
         .slice(0, 40)
 
