@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getEvent } from '@/lib/firestore'
-import { adminCreatePurchase } from '@/lib/firestore-admin'
+import { adminCreatePurchase, adminGetEvent } from '@/lib/firestore-admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +9,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
 
-    const event = await getEvent(eventId)
+    // Utiliser adminGetEvent au lieu de getEvent pour la stabilité sur Vercel
+    const event = await adminGetEvent(eventId)
     if (!event) return NextResponse.json({ error: 'Event introuvable' }, { status: 404 })
 
     const totalAmount = photoIds.length * event.pricePerPhoto

@@ -63,6 +63,27 @@ export async function adminUpdatePurchase(purchaseId: string, data: Partial<Purc
 
 // ─── RÉCUPÉRATION ─────────────────────────────────────────
 
+export async function adminGetEvent(eventId: string): Promise<Event | null> {
+  const db = checkAdmin()
+  const snap = await db.collection('events').doc(eventId).get()
+  if (!snap.exists) return null
+  return { id: snap.id, ...snap.data() } as Event
+}
+
+export async function adminGetPhoto(photoId: string): Promise<Photo | null> {
+  const db = checkAdmin()
+  const snap = await db.collection('photos').doc(photoId).get()
+  if (!snap.exists) return null
+  return { id: snap.id, ...snap.data() } as Photo
+}
+
+export async function adminGetPurchase(purchaseId: string): Promise<Purchase | null> {
+  const db = checkAdmin()
+  const snap = await db.collection('purchases').doc(purchaseId).get()
+  if (!snap.exists) return null
+  return { id: snap.id, ...snap.data() } as Purchase
+}
+
 export async function adminGetEventPhotos(eventId: string): Promise<Photo[]> {
   const db = checkAdmin()
   const snap = await db.collection('photos').where('eventId', '==', eventId).get()

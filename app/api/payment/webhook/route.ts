@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPurchase, getPhoto } from '@/lib/firestore'
-import { adminUpdatePurchase } from '@/lib/firestore-admin'
+import { adminUpdatePurchase, adminGetPurchase, adminGetPhoto } from '@/lib/firestore-admin'
 import { getDownloadUrl } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
@@ -16,7 +15,8 @@ export async function POST(request: NextRequest) {
     if (['paid', 'success', 'confirmed', 'completed'].includes(s)) status = 'confirmed'
     else if (['failed', 'cancelled', 'declined', 'error'].includes(s)) status = 'failed'
 
-    const purchase = await getPurchase(purchaseId)
+    // Utiliser adminGetPurchase
+    const purchase = await adminGetPurchase(purchaseId)
     if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const updateData: any = { status }
@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     if (status === 'confirmed') {
       const photos = await Promise.all(
         purchase.photoIds.map(async (photoId) => {
-          const photo = await getPhoto(photoId)
+          // Utiliser adminGetPhoto
+          const photo = await adminGetPhoto(photoId)
           return photo?.cloudinaryPublicId ? getDownloadUrl(photo.cloudinaryPublicId) : null
         })
       )
