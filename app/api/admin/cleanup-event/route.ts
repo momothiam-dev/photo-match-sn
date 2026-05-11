@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { getCloudinaryConfig } from '@/lib/cloudinary'
-import { adminGetEventPhotos, adminDeletePhoto, adminUpdateEvent } from '@/lib/firestore-admin'
+import { getEventPhotos, deletePhoto, updateEvent } from '@/lib/firestore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,33 +15,32 @@ export async function POST(request: NextRequest) {
     const config = getCloudinaryConfig()
     cloudinary.config(config)
 
-    // Récupérer toutes les photos de l'événement via Admin SDK
-    const photos = await adminGetEventPhotos(eventId)
+    // Récupérer toutes les photos de l'événement
+    const photos = await getEventPhotos(eventId)
     
     if (photos.length === 0) {
       return NextResponse.json({ message: 'Aucune photo à supprimer' })
     }
 
-    // 1. Supprimer de Cloudinary par lots de 100 (limite de l'API)
+    // 1. Supprimer de Cloudinary par lots de 100
     const publicIds = photos
       .filter(p => p.cloudinaryPublicId)
       .map(p => p.cloudinaryPublicId!)
 
     if (publicIds.length > 0) {
-      // Cloudinary delete_resources supporte jusqu'à 100 IDs par appel
       for (let i = 0; i < publicIds.length; i += 100) {
         const batch = publicIds.slice(i, i + 100)
         await cloudinary.api.delete_resources(batch)
       }
     }
 
-    // 2. Supprimer de Firestore via Admin SDK
+    // 2. Supprimer de Firestore
     for (const photo of photos) {
-      await adminDeletePhoto(photo.id)
+      await deletePhoto(photo.id)
     }
 
-    // 3. Remettre le compteur de photos à zéro dans l'événement via Admin SDK
-    await adminUpdateEvent(eventId, { totalPhotos: 0 })
+    // 3. Remettre le compteur de photos à zéro
+    await updateEvent(eventId, { totalPhotos: 0 })
 
     return NextResponse.json({ 
       success: true, 

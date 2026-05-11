@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getEvent } from '@/lib/firestore'
-import { adminCreatePurchase } from '@/lib/firestore-admin'
+import { createPurchase, getEvent } from '@/lib/firestore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +13,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'eventId et paymentMethod requis' }, { status: 400 })
     }
 
-    // Récupérer l'événement pour calculer le total
     const event = await getEvent(eventId)
     if (!event) {
       return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
@@ -22,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = photoIds.length * event.pricePerPhoto
 
-    // Créer l'achat via Admin SDK
-    const purchaseId = await adminCreatePurchase({
+    // Créer l'achat
+    const purchaseId = await createPurchase({
       eventId,
       photoIds,
       totalAmount,
@@ -31,10 +29,8 @@ export async function POST(request: NextRequest) {
       status: 'pending',
     })
 
-    // URL de secours pour le développement (simulation locale)
     let paymentUrl = `${request.headers.get('origin')}/user/success?purchaseId=${purchaseId}&simulated=true`
 
-    // Tenter l'intégration PayTech si configurée
     const paytechApiKey = process.env.PAYTECH_API_KEY
     const paytechApiUrl = process.env.PAYTECH_API_URL
 
@@ -49,8 +45,6 @@ export async function POST(request: NextRequest) {
           orderId: purchaseId,
           callbackUrl,
           returnUrl,
-          // Optionnel: on peut spécifier la méthode à PayTech si l'API le supporte
-          paymentMethod: paymentMethod === 'paytech' ? undefined : paymentMethod
         }
 
         const payRes = await fetch(`${paytechApiUrl}/payments`, {
@@ -67,7 +61,7 @@ export async function POST(request: NextRequest) {
           paymentUrl = payData.paymentUrl || payData.checkoutUrl || payData.redirectUrl || paymentUrl
         }
       } catch (err) {
-        console.error('Erreur intégration PayTech, repli sur simulation:', err)
+        console.error('Erreur PayTech:', err)
       }
     }
 

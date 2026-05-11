@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
 import { getCloudinaryConfig } from '@/lib/cloudinary'
-import { adminSavePhoto } from '@/lib/firestore-admin'
+import { savePhoto } from '@/lib/firestore'
 
 // Configurer Cloudinary côté serveur
 const config = getCloudinaryConfig()
@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
         {
           folder:          `originals/${eventId}`,
           resource_type:   'image',
-          // Pas de transformation ici — l'original est stocké tel quel
-          // Le watermark est appliqué à la demande via les URLs CDN
         },
         (error, result) => {
           if (error || !result) reject(error)
@@ -49,8 +47,8 @@ export async function POST(request: NextRequest) {
       ).end(buffer)
     })
 
-    // Sauvegarder les métadonnées dans Firestore via Admin SDK
-    const photoId = await adminSavePhoto({
+    // Sauvegarder les métadonnées dans Firestore
+    const photoId = await savePhoto({
       eventId,
       cloudinaryPublicId: uploadResult.public_id,
       thumbnailUrl:       '',        
