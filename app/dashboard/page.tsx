@@ -2,18 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { listEvents } from '@/lib/firestore'
+import { listEvents, getPhotographerEarnings } from '@/lib/firestore'
 import type { Event } from '@/lib/types'
 import { BackButton } from '@/components/BackButton'
 import { Calendar, Image, CheckCircle, DollarSign, FolderOpen, Camera, Plus, ChevronRight, Loader2 } from 'lucide-react'
 
 export default function DashboardPage() {
-  const [events, setEvents]   = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
+  const [events, setEvents]     = useState<Event[]>([])
+  const [earnings, setEarnings] = useState(0)
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    listEvents()
-      .then(setEvents)
+    Promise.all([
+      listEvents(),
+      getPhotographerEarnings()
+    ]).then(([eventsData, earningsData]) => {
+      setEvents(eventsData)
+      setEarnings(earningsData)
+    })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -44,7 +50,7 @@ export default function DashboardPage() {
             { label: 'Événements',  value: loading ? '...' : events.length.toString(),        icon: Calendar },
             { label: 'Photos',      value: loading ? '...' : totalPhotos.toString(),           icon: Image },
             { label: 'Actifs',      value: loading ? '...' : events.filter(e => e.status === 'active').length.toString(), icon: CheckCircle },
-            { label: 'Revenus',     value: '0 FCFA',                                           icon: DollarSign },
+            { label: 'Revenus',     value: loading ? '...' : `${earnings.toLocaleString()} FCFA`, icon: DollarSign },
           ].map(stat => (
             <div key={stat.label} className="card flex flex-col items-center justify-center p-8">
               <stat.icon size={40} className="mb-3 text-brand-blue" />

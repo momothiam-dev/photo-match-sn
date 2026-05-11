@@ -165,3 +165,9 @@ export async function getPurchasesForEvent(eventId: string): Promise<Purchase[]>
   const snap = await getDocs(q)
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Purchase))
 }
+
+export async function getPhotographerEarnings(): Promise<number> {
+  const q = query(collection(db, 'purchases'), where('status', '==', 'completed'))
+  const snap = await getDocs(q)
+  return snap.docs.reduce((sum, d) => sum + (d.data().totalAmount || 0), 0)
+}
