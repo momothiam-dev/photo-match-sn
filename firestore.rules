@@ -2,22 +2,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Événements : Lecture publique, Modification interdite côté client
     match /events/{eventId} {
       allow read: if true;
       allow write: if false; 
     }
     
-    // Photos : Lecture publique, Modification interdite côté client
     match /photos/{photoId} {
       allow read: if true;
       allow write: if false;
     }
     
-    // Achats : 
-    // - Autoriser la création (pour le checkout)
-    // - Lecture interdite au public (seul l'admin doit voir les ventes)
-    // - Modification interdite (le changement de statut se fait via API serveur)
     match /purchases/{purchaseId} {
       allow create: if true;
       allow read: if false;
@@ -25,7 +19,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Par défaut : Tout est verrouillé
     match /{document=**} {
       allow read, write: if false;
     }
