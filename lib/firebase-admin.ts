@@ -1,19 +1,33 @@
 import * as admin from 'firebase-admin'
 
-if (!admin.apps.length) {
+function initializeAdmin() {
+  if (admin.apps.length > 0) return admin.app()
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+
+  if (!projectId || !clientEmail || !privateKey) {
+    console.warn('⚠️ Firebase Admin : Clés manquantes. Le SDK Admin ne sera pas disponible.')
+    return null
+  }
+
   try {
-    admin.initializeApp({
+    return admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        projectId,
+        clientEmail,
+        privateKey,
       }),
     })
-    console.log('✅ Firebase Admin Initialized')
   } catch (error) {
     console.error('❌ Firebase Admin Initialization Error:', error)
+    return null
   }
 }
 
-export const adminDb = admin.firestore()
+// Initialiser au premier appel
+const app = initializeAdmin()
+
+export const adminDb = app ? admin.firestore() : null
 export { admin }

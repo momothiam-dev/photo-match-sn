@@ -1,17 +1,23 @@
 import { adminDb } from './firebase-admin'
 import type { Photo, Purchase, Event } from './types'
 
+function checkAdmin() {
+  if (!adminDb) throw new Error('Firebase Admin DB is not initialized. Check your environment variables.')
+  return adminDb
+}
+
 // ─── PHOTOS ───────────────────────────────────────────────
 
 export async function adminSavePhoto(photo: Omit<Photo, 'id' | 'uploadedAt'>): Promise<string> {
-  const ref = adminDb.collection('photos').doc()
+  const db = checkAdmin()
+  const ref = db.collection('photos').doc()
   await ref.set({
     ...photo,
     uploadedAt: new Date().toISOString(),
   })
 
   // Incrémenter le compteur de photos de l'événement
-  const eventRef = adminDb.collection('events').doc(photo.eventId)
+  const eventRef = db.collection('events').doc(photo.eventId)
   const eventSnap = await eventRef.get()
   if (eventSnap.exists) {
     const current = eventSnap.data()?.totalPhotos || 0
@@ -22,23 +28,27 @@ export async function adminSavePhoto(photo: Omit<Photo, 'id' | 'uploadedAt'>): P
 }
 
 export async function adminUpdatePhoto(photoId: string, data: Partial<Photo>): Promise<void> {
-  await adminDb.collection('photos').doc(photoId).update(data)
+  const db = checkAdmin()
+  await db.collection('photos').doc(photoId).update(data)
 }
 
 export async function adminDeletePhoto(photoId: string): Promise<void> {
-  await adminDb.collection('photos').doc(photoId).delete()
+  const db = checkAdmin()
+  await db.collection('photos').doc(photoId).delete()
 }
 
 // ─── ÉVÉNEMENTS ───────────────────────────────────────────
 
 export async function adminUpdateEvent(eventId: string, data: Partial<Event>): Promise<void> {
-  await adminDb.collection('events').doc(eventId).update(data)
+  const db = checkAdmin()
+  await db.collection('events').doc(eventId).update(data)
 }
 
 // ─── ACHATS ───────────────────────────────────────────────
 
 export async function adminCreatePurchase(purchase: Omit<Purchase, 'id' | 'createdAt'>): Promise<string> {
-  const ref = adminDb.collection('purchases').doc()
+  const db = checkAdmin()
+  const ref = db.collection('purchases').doc()
   await ref.set({
     ...purchase,
     createdAt: new Date().toISOString(),
@@ -47,12 +57,14 @@ export async function adminCreatePurchase(purchase: Omit<Purchase, 'id' | 'creat
 }
 
 export async function adminUpdatePurchase(purchaseId: string, data: Partial<Purchase>): Promise<void> {
-  await adminDb.collection('purchases').doc(purchaseId).update(data)
+  const db = checkAdmin()
+  await db.collection('purchases').doc(purchaseId).update(data)
 }
 
 // ─── RÉCUPÉRATION ─────────────────────────────────────────
 
 export async function adminGetEventPhotos(eventId: string): Promise<Photo[]> {
-  const snap = await adminDb.collection('photos').where('eventId', '==', eventId).get()
+  const db = checkAdmin()
+  const snap = await db.collection('photos').where('eventId', '==', eventId).get()
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Photo))
 }
